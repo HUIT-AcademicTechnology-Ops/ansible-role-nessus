@@ -1,0 +1,41 @@
+---
+# tasks file for ansible-role-nessus
+
+- name: Validate required parameters and environment
+  assert:
+    that:
+      - nessus_download_url is defined
+      - ansible_pkg_mgr is defined
+      - ansible_pkg_mgr in ['yum', 'apt']
+
+- name: download nessus package
+  get_url:
+    url: "{{ nessus_download_url }}"
+    dest: /tmp
+  register: nessus_download
+  until: nessus_download is success
+  retries: 3
+  delay: 2
+
+- name: install the nessus deb package
+  apt:
+    deb: "{{ nessus_download.dest }}"
+  when: ansible_pkg_mgr == 'apt'
+  register: nessus_pkg_deb_install
+
+- name: install the nessus rpm package
+  yum:
+    name: "{{ nessus_download.dest }}"
+  when: ansible_pkg_mgr == 'yum'
+  register: nessus_pkg_rpm_install
+
+- name: store package installation result as boolean var
+  set_fact:
+    nessus_pkg_install: nessus_pkg_deb_install.changed or nessus_pkg_rpm_install.changed
+
+- name: Ensure Nessus Agent service is running
+  service:
+    name: nessusagent
+    enabled: yes
+    state: started
+  when: nessus_pkg_install
