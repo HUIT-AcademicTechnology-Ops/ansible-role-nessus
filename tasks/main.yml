@@ -38,4 +38,4 @@
     name: nessusagent
     enabled: yes
     state: started
-  when: nessus_pkg_install
+  when: nessus_pkg_install|bool
