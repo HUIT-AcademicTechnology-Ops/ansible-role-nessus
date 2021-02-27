@@ -29,6 +29,12 @@
   when: ansible_pkg_mgr == 'yum'
   register: nessus_pkg_rpm_install
 
+- name: install the nessus unlink shutdown script
+  copy:
+    src: S99nessus-unlink
+    dest: /etc/rc6.d/S99nessus-unlink
+    mode: "0755"
+
 - name: store package installation result as boolean var
   set_fact:
     nessus_pkg_install: nessus_pkg_deb_install.changed or nessus_pkg_rpm_install.changed
